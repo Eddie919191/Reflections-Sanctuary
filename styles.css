@@ -1,0 +1,223 @@
+/* Smooth fade-in effect */
+.hidden {
+    opacity: 0;
+    transform: translateY(5px);
+    transition: opacity 2s ease-in-out, transform 1.5s ease-in-out;
+    display: none; /* Ensures it does not occupy space */
+}
+
+
+.show {
+    opacity: 1;
+    transform: translateY(0);
+    display: block; /* Ensures the message appears */
+    @keyframes fadeInLeft {
+        from {
+            opacity: 0;
+            transform: translateX(-800px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(800);
+        }
+    }
+    
+    
+    /* Apply to bot messages */
+    .message.bot.new {
+        animation: fadeInLeft 1.5s ease-in-out;
+    }
+    
+    /* Apply to user messages */
+    .message.user {
+        opacity: 0; 
+        transform: translateX(5px); 
+        animation: fadeInUser 0.8s ease-in-out forwards; 
+    }
+    
+}
+
+/* Chat container */
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background-color: black; /* Total darkness */
+    color: #ffffff;
+    font-family: "Arial", sans-serif;
+}
+
+/* Chat box */
+#chat-box {
+    width: 80%;
+    max-width: 600px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+    overflow-y: auto;
+    height: 300px;
+}
+
+/* Message style */
+.message {
+    display: block !important;
+    margin: 10px 0;
+    padding: 0; /* No extra spacing */
+    border-radius: 0; /* No rounding */
+    max-width: 80%;
+    word-wrap: break-word;
+    opacity: 1 !important;
+    color: white !important;
+    background: none; /* Remove message box */
+    animation: fadeIn 1.5s ease-out forwards;
+    transform: translateX(-20px);
+    position: relative;
+}
+
+/* User messages */
+.message.user {
+    background: none;
+    color: white;
+    align-self: flex-end;
+    text-align: right;
+    position: relative;
+    opacity: 0;
+    transform: translateX(0px);
+    animation: revealText 2s ease-in-out;
+}
+
+
+/* Default bot messages (like the intro ones) */
+.message.bot {
+    display: inline-block;
+    white-space: normal; /* Allow wrapping */
+    overflow: hidden;
+    max-width: 90%; /* Prevent too-wide messages */
+    word-wrap: break-word;
+    line-height: 1.4;
+    opacity:1;
+    clip-path: inset(0 100% 0 0); /* Hide text initially */
+    animation: revealText 2s ease-in-out;
+}
+
+.message.bot.new {
+    clip-path: inset(0 100% 0 0);
+    animation: revealText 2s ease-in-out;
+}
+
+/* Bot message animations */
+@keyframes softFade {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.message.bot.new.show {
+    display: block !important;
+    opacity: 1 !important;
+    color: white !important;
+    visibility: visible !important;
+    animation: revealText 1.8s ease-out forwards;
+}
+
+
+
+@keyframes emergeSlow {
+    from { opacity: 0; filter: blur(5px); }
+    to { opacity: 1; filter: blur(0); }
+}
+
+@keyframes instantAppear {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes revealText {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+        clip-path: inset(0 100% 0 0); /* Start with text hidden */
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+        clip-path: inset(0 0 0 0); /* Reveal text fully */
+    }
+}
+
+@keyframes fadeInUser {
+    from {
+        opacity: 0;
+        transform: translateX(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+
+
+.reveal {
+    display: inline-block;
+    overflow: hidden;
+    white-space: normal;
+    max-width: 0;
+    opacity: 0;
+    animation: revealText 1.5s ease-out forwards;
+}
+
+
+
+
+@keyframes fadeInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes fadeInRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Apply different fade-in directions to bot messages */
+.message.bot:nth-child(odd) {
+    animation: fadeInLeft 1.5s ease-out forwards;
+}
+
+.message.bot:nth-child(even) {
+    animation: fadeInRight 1.5s ease-out forwards;
+}
+
+/* Input field */
+#user-input {
+    width: 80%;
+    max-width: 600px;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    margin-top: 10px;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    font-size: 16px;
+    outline: none;
+}
+
+/* Soft glow effect */
+#user-input:focus {
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
