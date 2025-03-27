@@ -8,6 +8,7 @@ window.onload = function () {
     chatBox = document.getElementById("chat-box"); // Assign it when the page loads
     console.log("ChatBox found globally:", chatBox);
 };
+
 const introMessages = [
     ". . .",
     "Hello. 😌💙",
@@ -43,6 +44,7 @@ if (userInput) {
                     }, 1800); // Pause before responding
                 }, 1000);
             }
+            startInactivityTimer(); // Call the inactivity timer on Enter
         }
     });
 } else {
@@ -50,7 +52,6 @@ if (userInput) {
 }
 
 function addUserMessage(text) {
-    const chatBox = document.getElementById("chat-box");
     if (!chatBox) {
         console.error("Error: #chat-box element not found.");
         return;
@@ -72,7 +73,6 @@ function showTypingIndicator() {
     typingIndicator.textContent = "...";
     typingIndicator.setAttribute("id", "typing-indicator");
 
-    const chatBox = document.getElementById("chat-box");
     if (chatBox) {
         chatBox.appendChild(typingIndicator);
         console.log("Typing indicator added:", typingIndicator); // Debugging
@@ -92,12 +92,16 @@ function sendBotMessage(message, effect = "typewriter") {
     console.log("Bot Message Effect:", effect, "Message:", message);
 
     const botMessage = document.createElement("p");
-    const chatBox = document.getElementById("chat-box");
     
     // Ensure message is valid
     if (!message || message.trim() === "") {
         console.warn("⚠️ Empty bot message detected! Not displaying.");
         return; // Stops execution if message is empty
+    }
+
+    if (!chatBox) {
+        console.error("Error: #chat-box element not found.");
+        return;
     }
 
     // Add classes for styling and animation
@@ -120,16 +124,6 @@ function sendBotMessage(message, effect = "typewriter") {
 
         console.log("Revealing botMessage:", botMessage);
     }
-
-    // Ensure botMessage is properly passed
-    setTimeout(() => {
-        console.log("Final botMessage state before reveal:", botMessage, botMessage?.textContent);
-        if (botMessage) {
-            revealMessage(botMessage);
-        } else {
-            console.error("Error: botMessage is missing at reveal step.");
-        }
-    }, 100);
 
     if (effect === "typewriter") {
         const words = message.split(" ");
@@ -248,12 +242,6 @@ function startInactivityTimer() {
     }, 10000); // Shimmer at 10 seconds
 }    
 
-document.getElementById("user-input").addEventListener("keydown", function (event) {
-    if (event.key === "Enter") {
-        startInactivityTimer();
-    }
-});
-
 startInactivityTimer();
 
 function generateResponse(userText) {
@@ -275,9 +263,3 @@ function generateResponse(userText) {
 }
 
 });
-
-
-}
-
-});
-
