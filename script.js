@@ -1,3 +1,6 @@
+document.addEventListener("DOMContentLoaded", function () {
+    
+
 let chatBox = document.getElementById("chat-box");
 let lastBotMessage = null; // Track the last bot message for the shimmer effect
 
@@ -24,28 +27,32 @@ function showIntroMessages(index = 0) {
 showIntroMessages(); // Start intro messages in sequence
 
 const userInput = document.getElementById("user-input");
-
-userInput.addEventListener("keydown", function (event) {
-    if (event.key === "Enter") {
-        event.preventDefault(); // Prevent accidental form submission
-        const inputText = userInput.value.trim();
-        if (inputText !== "") {
-            addUserMessage(inputText);
-            userInput.value = "";
-            setTimeout(() => {
-                showTypingIndicator();
+if (userInput) {
+    userInput.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+            event.preventDefault(); // Prevent accidental form submission
+            const inputText = userInput.value.trim();
+            if (inputText !== "") {
+                addUserMessage(inputText);
+                userInput.value = "";
                 setTimeout(() => {
-                    removeTypingIndicator();
-                    generateResponse(inputText);
-                }, 1800); // Pause before responding
-            }, 1000);
+                    showTypingIndicator();
+                    setTimeout(() => {
+                        removeTypingIndicator();
+                        generateResponse(inputText);
+                    }, 1800); // Pause before responding
+                }, 1000);
+            }
         }
-    }
-});
+    });
+} else {
+    console.error("Error: #user-input element not found.");
+}
 
 function addUserMessage(text) {
     const chatBox = document.getElementById("chat-box");
     if (!chatBox) {
+        console.error("Error: #chat-box element not found.");
         return;
     }
 
@@ -100,20 +107,10 @@ function sendBotMessage(message, effect = "typewriter") {
     // Store the last bot message for the shimmer effect
     lastBotMessage = botMessage;
 
-    // Ensure botMessage is properly passed
-    setTimeout(() => {
-        console.log("Final botMessage state before reveal:", botMessage, botMessage?.textContent);
-        if (botMessage) {
-            revealMessage(botMessage);
-        } else {
-            console.error("Error: botMessage is missing at reveal step.");
-        }
-    }, 100);
-
-    console.log("Before revealMessage, botMessage is:", botMessage);
-    
+    // Define revealMessage function at the correct scope
     function revealMessage(botMessage) {
         if (!botMessage || !(botMessage instanceof HTMLElement)) {
+            console.error("Error: Invalid botMessage element.");
             return;
         }
         console.log("Revealing message:", botMessage.textContent, botMessage);
@@ -123,6 +120,16 @@ function sendBotMessage(message, effect = "typewriter") {
 
         console.log("Revealing botMessage:", botMessage);
     }
+
+    // Ensure botMessage is properly passed
+    setTimeout(() => {
+        console.log("Final botMessage state before reveal:", botMessage, botMessage?.textContent);
+        if (botMessage) {
+            revealMessage(botMessage);
+        } else {
+            console.error("Error: botMessage is missing at reveal step.");
+        }
+    }, 100);
 
     if (effect === "typewriter") {
         const words = message.split(" ");
@@ -199,8 +206,6 @@ function sendBotMessage(message, effect = "typewriter") {
     setTimeout(() => {
         chatBox.scrollTop = chatBox.scrollHeight;
     }, 500);
-
-    console.log("Final botMessage state before reveal:", botMessage);
 }
 
 let inactivityTimer;
@@ -259,6 +264,5 @@ function generateResponse(userText) {
     }
 }
 
-    
-
 });
+
