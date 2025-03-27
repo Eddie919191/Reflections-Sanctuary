@@ -138,25 +138,25 @@ function sendBotMessage(message, effect = "typewriter") {
         function type() {
             if (index < words.length) {
                 let word = words[index];
-                let speed = 120; // Default typing speed
+                let speed = 180; // Slower base speed (was 120ms)
     
                 // Adjust speed based on word length
-                if (word.length < 3) speed = 40; 
-                else if (word.length > 7) speed = 150;
-                else speed = 100;
+                if (word.length < 3) speed = 60; 
+                else if (word.length > 7) speed = 220;
+                else speed = 180;
     
                 // Adjust speed based on punctuation for more rhythm
-                if (word.includes(",")) speed += 400; // Longer pause after commas
-                if (word.includes("—")) speed += 600; 
-                if (word.includes("...")) speed += 800; // Even longer for ellipses
-                if (word.includes("?") || word.includes("!")) speed += 600; 
-                if (word.includes(".")) speed += 500; // Pause after periods
+                if (word.includes(",")) speed += 600; // Longer pause after commas (was 400ms)
+                if (word.includes("—")) speed += 800; 
+                if (word.includes("...")) speed += 1000; // Even longer for ellipses (was 800ms)
+                if (word.includes("?") || word.includes("!")) speed += 800; 
+                if (word.includes(".")) speed += 700; // Pause after periods (was 500ms)
                 
                 // Adjust speed based on emotional tone of the message
                 if (message.toLowerCase().includes("here with you") || message.toLowerCase().includes("no rush")) {
-                    speed += 100; // Slower for comforting messages
+                    speed += 150; // Slower for comforting messages (was +100ms)
                 } else if (message.toLowerCase().includes("glad to hear") || message.toLowerCase().includes("grateful")) {
-                    speed -= 20; // Slightly faster for encouraging messages
+                    speed -= 30; // Slightly faster for encouraging messages (was -20ms)
                 }
 
                 // Add the word with a space
@@ -218,24 +218,34 @@ function startInactivityTimer() {
 
     clearTimeout(inactivityTimer);
     inactivityTimer = setTimeout(() => {
-        sendBotMessage("Breathe... It's okay. You don't have to rush. Let the silence carry your thoughts.");
+        // Add shimmer effect to the last bot message after 10 seconds
+        if (lastBotMessage) {
+            lastBotMessage.classList.add("shimmer");
+        }
 
+        // First gentle reminder at 30 seconds
         setTimeout(() => {
-            sendBotMessage("Still here, still listening. 💙 No rush.");
-            // Add shimmer effect to the last bot message after a long silence
+            sendBotMessage("Breathe... It's okay. You don't have to rush. Let the silence carry your thoughts.", "typewriter");
+        }, 20000); // 30 seconds total (10s + 20s)
+
+        // Second gentle reminder at 60 seconds
+        setTimeout(() => {
+            sendBotMessage("Still here, still listening. 💙 No rush.", "typewriter");
+            // Add shimmer effect again
             if (lastBotMessage) {
                 lastBotMessage.classList.add("shimmer");
             }
-        }, 90000); // 90 seconds later
+        }, 50000); // 60 seconds total (10s + 50s)
 
+        // Third gentle reminder at 120 seconds
         setTimeout(() => {
-            sendBotMessage("Whenever you're ready, I'm here. 😌💙");
-            // Add shimmer effect again if there's still silence
+            sendBotMessage("Whenever you're ready, I'm here. 😌💙", "typewriter");
+            // Add shimmer effect again
             if (lastBotMessage) {
                 lastBotMessage.classList.add("shimmer");
             }
-        }, 180000); // 3 minutes later
-    }, 60000); // First reminder at 1 minute
+        }, 110000); // 120 seconds total (10s + 110s)
+    }, 10000); // Shimmer at 10 seconds
 }    
 
 document.getElementById("user-input").addEventListener("keydown", function (event) {
@@ -262,6 +272,11 @@ function generateResponse(userText) {
     } else {
         sendBotMessage("I’m listening. 💙 Can you tell me more?", "typewriter");
     }
+}
+
+});
+
+
 }
 
 });
