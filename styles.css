@@ -106,8 +106,7 @@
     text-align: right;
     position: relative;
     opacity: 0;
-    transform: translateX(0px);
-    animation: revealText 2s ease-in-out;
+    animation: fadeInUser 0.5s ease-in-out forwards;
 }
 /* Default bot messages (like the intro ones) */
 .message.bot {
@@ -160,11 +159,9 @@
 @keyframes fadeInUser {
     from {
         opacity: 0;
-        transform: translateX(5px);
     }
     to {
         opacity: 1;
-        transform: translateX(0);
     }
 }
 .reveal {
