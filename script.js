@@ -37,14 +37,20 @@ if (userInput) {
                 addUserMessage(inputText);
                 userInput.value = "";
                 setTimeout(() => {
-                    showTypingIndicator();
+                    // Show thinking effect instead of typing indicator
+                    if (chatBox) {
+                        chatBox.classList.add("thinking");
+                    }
                     setTimeout(() => {
-                        removeTypingIndicator();
+                        // Remove thinking effect
+                        if (chatBox) {
+                            chatBox.classList.remove("thinking");
+                        }
                         generateResponse(inputText);
-                    }, 1800); // Pause before responding
+                    }, 2500); // Total delay of 3500ms (1000ms + 2500ms)
                 }, 1000);
             }
-            startInactivityTimer(); // Call the inactivity timer on Enter
+            startInactivityTimer();
         }
     });
 } else {
@@ -63,29 +69,6 @@ function addUserMessage(text) {
 
     chatBox.appendChild(userMessage);
     chatBox.scrollTop = chatBox.scrollHeight;
-}
-
-function showTypingIndicator() {
-    removeTypingIndicator(); // Clear any existing one
-
-    const typingIndicator = document.createElement("p");
-    typingIndicator.classList.add("message", "bot", "typing");
-    typingIndicator.textContent = "...";
-    typingIndicator.setAttribute("id", "typing-indicator");
-
-    if (chatBox) {
-        chatBox.appendChild(typingIndicator);
-        console.log("Typing indicator added:", typingIndicator); // Debugging
-    } else {
-        console.error("ChatBox not found!"); // Debugging
-    }
-}
-
-function removeTypingIndicator() {
-    const typingIndicator = document.getElementById("typing-indicator");
-    if (typingIndicator) {
-        typingIndicator.remove();
-    }
 }
 
 function sendBotMessage(message, effect = "typewriter") {
@@ -129,39 +112,42 @@ function sendBotMessage(message, effect = "typewriter") {
         const words = message.split(" ");
         let index = 0;
     
-        function type() {
-            if (index < words.length) {
-                let word = words[index];
-                let speed = 180; // Slower base speed (was 120ms)
+        // Add a slight pause before starting the typewriter effect
+        setTimeout(() => {
+            function type() {
+                if (index < words.length) {
+                    let word = words[index];
+                    let speed = 180; // Slower base speed
     
-                // Adjust speed based on word length
-                if (word.length < 3) speed = 60; 
-                else if (word.length > 7) speed = 220;
-                else speed = 180;
+                    // Adjust speed based on word length
+                    if (word.length < 3) speed = 60; 
+                    else if (word.length > 7) speed = 220;
+                    else speed = 180;
     
-                // Adjust speed based on punctuation for more rhythm
-                if (word.includes(",")) speed += 600; // Longer pause after commas (was 400ms)
-                if (word.includes("—")) speed += 800; 
-                if (word.includes("...")) speed += 1000; // Even longer for ellipses (was 800ms)
-                if (word.includes("?") || word.includes("!")) speed += 800; 
-                if (word.includes(".")) speed += 700; // Pause after periods (was 500ms)
-                
-                // Adjust speed based on emotional tone of the message
-                if (message.toLowerCase().includes("here with you") || message.toLowerCase().includes("no rush")) {
-                    speed += 150; // Slower for comforting messages (was +100ms)
-                } else if (message.toLowerCase().includes("glad to hear") || message.toLowerCase().includes("grateful")) {
-                    speed -= 30; // Slightly faster for encouraging messages (was -20ms)
-                }
+                    // Adjust speed based on punctuation for more rhythm
+                    if (word.includes(",")) speed += 600;
+                    if (word.includes("—")) speed += 800;
+                    if (word.includes("...")) speed += 1000;
+                    if (word.includes("?") || word.includes("!")) speed += 800;
+                    if (word.includes(".")) speed += 700;
+                    
+                    // Adjust speed based on emotional tone of the message
+                    if (message.toLowerCase().includes("here with you") || message.toLowerCase().includes("no rush")) {
+                        speed += 150;
+                    } else if (message.toLowerCase().includes("glad to hear") || message.toLowerCase().includes("grateful")) {
+                        speed -= 30;
+                    }
 
-                // Add the word with a space
-                botMessage.textContent += word + " "; 
-                index++;
-                setTimeout(type, speed);
-            } else {
-                revealMessage(botMessage); // Show message after typing
+                    // Add the word with a space
+                    botMessage.textContent += word + " "; 
+                    index++;
+                    setTimeout(type, speed);
+                } else {
+                    revealMessage(botMessage); // Show message after typing
+                }
             }
-        }
-        type();
+            type();
+        }, 300); // 300ms pause before typing starts
     } 
     else if (effect === "softFade") {
         if (message && message.trim() !== "") {
@@ -214,7 +200,10 @@ function startInactivityTimer() {
     inactivityTimer = setTimeout(() => {
         // Add shimmer effect to the last bot message after 10 seconds
         if (lastBotMessage) {
+            console.log("Applying shimmer effect to last bot message:", lastBotMessage.textContent);
             lastBotMessage.classList.add("shimmer");
+        } else {
+            console.log("No last bot message to apply shimmer effect.");
         }
 
         // First gentle reminder at 30 seconds
@@ -263,3 +252,4 @@ function generateResponse(userText) {
 }
 
 });
+
