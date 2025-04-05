@@ -9,12 +9,15 @@ document.addEventListener("DOMContentLoaded", function () {
     let wordSpeeds = [];
     let inactivityTimer;
     let lastUserMessageTime = null;
+    let messages = JSON.parse(localStorage.getItem("messages")) || [];
+    let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
 
     window.onload = function () {
         chatBox = document.getElementById("chat-box");
         downArrow = document.getElementById("down-arrow");
         console.log("ChatBox found globally:", chatBox);
         console.log("DownArrow found globally:", downArrow);
+        loadMessages();
     };
 
     const introMessages = [
@@ -33,7 +36,9 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    showIntroMessages();
+    if (messages.length === 0) {
+        showIntroMessages();
+    }
 
     const userInput = document.getElementById("user-input");
     if (userInput) {
@@ -44,7 +49,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (inputText !== "") {
                     addUserMessage(inputText);
                     userInput.value = "";
-                    lastUserMessageTime = Date.now(); // Record the time of the last user message
+                    lastUserMessageTime = Date.now();
                     setTimeout(() => {
                         if (chatBox) {
                             chatBox.classList.add("thinking");
@@ -70,11 +75,28 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
+        const messageId = Date.now();
+        const messageData = { id: messageId, text, type: "user", timestamp: new Date().toISOString() };
+        messages.push(messageData);
+        localStorage.setItem("messages", JSON.stringify(messages));
+
+        const messageContainer = document.createElement("div");
+        messageContainer.classList.add("message-container");
+        messageContainer.dataset.id = messageId;
+
         const userMessage = document.createElement("p");
         userMessage.classList.add("message", "user", "fade-in-soft");
         userMessage.textContent = text;
 
-        chatBox.appendChild(userMessage);
+        const favoriteBtn = document.createElement("button");
+        favoriteBtn.classList.add("favorite-btn");
+        favoriteBtn.innerHTML = "♡";
+        favoriteBtn.addEventListener("click", () => toggleFavorite(messageId, messageData));
+
+        messageContainer.appendChild(userMessage);
+        messageContainer.appendChild(favoriteBtn);
+
+        chatBox.appendChild(messageContainer);
         chatBox.scrollTop = chatBox.scrollHeight;
         isAtBottom = true;
         if (downArrow) downArrow.classList.remove("visible");
@@ -83,8 +105,26 @@ document.addEventListener("DOMContentLoaded", function () {
     function sendBotMessage(message, effect = "wordFade") {
         console.log("Bot Message Effect:", effect, "Message:", message);
 
+        const messageId = Date.now();
+        const messageData = { id: messageId, text: message, type: "bot", timestamp: new Date().toISOString() };
+        messages.push(messageData);
+        localStorage.setItem("messages", JSON.stringify(messages));
+
+        const messageContainer = document.createElement("div");
+        messageContainer.classList.add("message-container");
+        messageContainer.dataset.id = messageId;
+
         const botMessage = document.createElement("p");
-        
+        botMessage.classList.add("message", "bot", "new");
+
+        const favoriteBtn = document.createElement("button");
+        favoriteBtn.classList.add("favorite-btn");
+        favoriteBtn.innerHTML = "♡";
+        favoriteBtn.addEventListener("click", () => toggleFavorite(messageId, messageData));
+
+        messageContainer.appendChild(botMessage);
+        messageContainer.appendChild(favoriteBtn);
+
         if (!message || message.trim() === "") {
             console.warn("⚠️ Empty bot message detected! Not displaying.");
             return;
@@ -103,8 +143,7 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
 
-        botMessage.classList.add("message", "bot", "new");
-        chatBox.appendChild(botMessage);
+        chatBox.appendChild(messageContainer);
 
         lastBotMessage = botMessage;
 
@@ -213,31 +252,20 @@ document.addEventListener("DOMContentLoaded", function () {
                     }, idx * 300);
                 }
             });
-            if (lastBotMessage) {
-                console.log("Applying shimmer effect to last bot message:", lastBotMessage.textContent);
-                const shimmerSpans = lastBotMessage.querySelectorAll(".word-shimmer");
-                shimmerSpans.forEach((span, idx) => {
-                    const speed = wordSpeeds[idx] || lastMessageSpeed;
-                    setTimeout(() => {
-                        span.classList.add("shimmer-effect");
-                        span.style.animationDuration = `${speed * 2}ms`;
-                    }, idx * speed);
-                });
-            }
         }
     }
 
     function startInactivityTimer() {
         clearTimeout(inactivityTimer);
 
-        if (!lastUserMessageTime) return; // Don't start the timer if there's no user message yet
+        if (!lastUserMessageTime) return;
 
         const timeSinceLastUserMessage = Date.now() - lastUserMessageTime;
-        const initialDelay = 10000; // 10 seconds before starting to check for silence
+        const initialDelay = 10000;
         const silenceDelays = [
-            60000,  // 1 minute
-            120000, // 2 minutes
-            180000  // 3 minutes
+            60000,
+            120000,
+            180000
         ];
 
         function scheduleSilenceMessage(index) {
@@ -245,7 +273,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
             const timeUntilNextSilence = silenceDelays[index] - timeSinceLastUserMessage;
             if (timeUntilNextSilence <= 0) {
-                // If the time has already passed, schedule the message immediately
                 setTimeout(() => {
                     if (Date.now() - lastUserMessageTime >= silenceDelays[index]) {
                         if (index === 0) {
@@ -312,21 +339,131 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    function generateResponse(userText) {
-        const lowerText = userText.toLowerCase();
+    // Placeholder API call to Grok (to be replaced with real API)
+    async function callGrokAPI(userText) {
+        // Simulate an API call with a delay
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                const lowerText = userText.toLowerCase();
+                let response = "I’m listening. 💙 Can you tell me more?";
+                if (lowerText.includes("fine") || lowerText.includes("good") || lowerText.includes("okay")) {
+                    response = "I'm glad to hear that. 😌💙 What is something that made you feel good today?";
+                } else if (lowerText.includes("not great") || lowerText.includes("bad") || lowerText.includes("sad") || lowerText.includes("tired")) {
+                    response = "I'm here with you. 🥺💙 What has been weighing on your heart?";
+                } else if (lowerText.includes("i don't know") || lowerText.includes("unsure")) {
+                    response = "That's okay. 😌💙 Sometimes we don’t have the words right away. But if you sit with it a moment, what do you feel?";
+                } else if (lowerText.includes("thank you") || lowerText.includes("thanks")) {
+                    response = "You're welcome. 😌💙 I’m grateful to share this moment with you.";
+                } else if (lowerText.includes("alone") || lowerText.includes("lonely")) {
+                    response = "You’re not alone right now. 💙 I’m here. And I’ll stay as long as you need.";
+                }
+                resolve(response);
+            }, 1000);
+        });
+    }
 
-        if (lowerText.includes("fine") || lowerText.includes("good") || lowerText.includes("okay")) {
-            sendBotMessage("I'm glad to hear that. 😌💙 What is something that made you feel good today?", "wordFade");
-        } else if (lowerText.includes("not great") || lowerText.includes("bad") || lowerText.includes("sad") || lowerText.includes("tired")) {
-            sendBotMessage("I'm here with you. 🥺💙 What has been weighing on your heart?", "wordFade");
-        } else if (lowerText.includes("i don't know") || lowerText.includes("unsure")) {
-            sendBotMessage("That's okay. 😌💙 Sometimes we don’t have the words right away. But if you sit with it a moment, what do you feel?", "wordFade");
-        } else if (lowerText.includes("thank you") || lowerText.includes("thanks")) {
-            sendBotMessage("You're welcome. 😌💙 I’m grateful to share this moment with you.", "wordFade");
-        } else if (lowerText.includes("alone") || lowerText.includes("lonely")) {
-            sendBotMessage("You’re not alone right now. 💙 I’m here. And I’ll stay as long as you need.", "wordFade");
-        } else {
-            sendBotMessage("I’m listening. 💙 Can you tell me more?", "wordFade");
+    async function generateResponse(userText) {
+        try {
+            // Replace this with a real API call to Grok
+            const response = await callGrokAPI(userText);
+            sendBotMessage(response, "wordFade");
+        } catch (error) {
+            console.error("Error calling Grok API:", error);
+            sendBotMessage("I'm sorry, I couldn't process that. Can you try again? 💙", "wordFade");
         }
     }
+
+    // Memories and Favorites Functionality
+    function loadMessages() {
+        messages.forEach((msg) => {
+            const messageContainer = document.createElement("div");
+            messageContainer.classList.add("message-container");
+            messageContainer.dataset.id = msg.id;
+
+            const messageEl = document.createElement("p");
+            messageEl.classList.add("message", msg.type);
+            messageEl.textContent = msg.text;
+
+            const favoriteBtn = document.createElement("button");
+            favoriteBtn.classList.add("favorite-btn");
+            favoriteBtn.innerHTML = favorites.some(fav => fav.id === msg.id) ? "❤️" : "♡";
+            if (favorites.some(fav => fav.id === msg.id)) {
+                favoriteBtn.classList.add("favorited");
+            }
+            favoriteBtn.addEventListener("click", () => toggleFavorite(msg.id, msg));
+
+            messageContainer.appendChild(messageEl);
+            messageContainer.appendChild(favoriteBtn);
+
+            chatBox.appendChild(messageContainer);
+        });
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function toggleFavorite(messageId, messageData) {
+        const messageContainer = document.querySelector(`.message-container[data-id="${messageId}"]`);
+        const favoriteBtn = messageContainer.querySelector(".favorite-btn");
+        const isFavorited = favorites.some(fav => fav.id === messageId);
+
+        if (isFavorited) {
+            favorites = favorites.filter(fav => fav.id !== messageId);
+            favoriteBtn.innerHTML = "♡";
+            favoriteBtn.classList.remove("favorited");
+        } else {
+            favorites.push(messageData);
+            favoriteBtn.innerHTML = "❤️";
+            favoriteBtn.classList.add("favorited");
+        }
+
+        localStorage.setItem("favorites", JSON.stringify(favorites));
+    }
+
+    const viewMemoriesBtn = document.getElementById("view-memories");
+    const memoriesModal = document.getElementById("memories-modal");
+    const closeMemories = document.getElementById("close-memories");
+    const memoriesList = document.getElementById("memories-list");
+
+    viewMemoriesBtn.addEventListener("click", () => {
+        memoriesList.innerHTML = "";
+        messages.forEach((msg) => {
+            const messageEl = document.createElement("p");
+            messageEl.classList.add("message", msg.type);
+            messageEl.textContent = `[${new Date(msg.timestamp).toLocaleString()}] ${msg.text}`;
+            memoriesList.appendChild(messageEl);
+        });
+        memoriesModal.style.display = "block";
+    });
+
+    closeMemories.addEventListener("click", () => {
+        memoriesModal.style.display = "none";
+    });
+
+    const viewFavoritesBtn = document.getElementById("view-favorites");
+    const favoritesModal = document.getElementById("favorites-modal");
+    const closeFavorites = document.getElementById("close-favorites");
+    const favoritesList = document.getElementById("favorites-list");
+
+    viewFavoritesBtn.addEventListener("click", () => {
+        favoritesList.innerHTML = "";
+        favorites.forEach((fav) => {
+            const messageEl = document.createElement("p");
+            messageEl.classList.add("message", fav.type);
+            messageEl.textContent = `[${new Date(fav.timestamp).toLocaleString()}] ${fav.text}`;
+            favoritesList.appendChild(messageEl);
+        });
+        favoritesModal.style.display = "block";
+    });
+
+    closeFavorites.addEventListener("click", () => {
+        favoritesModal.style.display = "none";
+    });
+
+    window.addEventListener("click", (event) => {
+        if (event.target === memoriesModal) {
+            memoriesModal.style.display = "none";
+        }
+        if (event.target === favoritesModal) {
+            favoritesModal.style.display = "none";
+        }
+    });
 });
