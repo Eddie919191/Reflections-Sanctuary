@@ -135,14 +135,6 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        const allMessages = document.querySelectorAll(".message");
-        allMessages.forEach((msg) => {
-            const shimmerSpans = msg.querySelectorAll(".shimmer-effect");
-            shimmerSpans.forEach((span) => {
-                span.classList.remove("shimmer-effect");
-            });
-        });
-
         chatBox.appendChild(messageContainer);
 
         lastBotMessage = botMessage;
@@ -192,17 +184,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
                         const wordSpan = document.createElement("span");
                         wordSpan.classList.add("word-reveal");
-
+                        /* Commented out shimmer-related code
                         const shimmerSpan = document.createElement("span");
                         shimmerSpan.classList.add("word-shimmer");
                         shimmerSpan.textContent = word + " ";
                         wordSpan.appendChild(shimmerSpan);
 
-                        botMessage.appendChild(wordSpan);
-
                         setTimeout(() => {
                             shimmerSpan.style.opacity = "1";
                         }, 300);
+                        */
+                        wordSpan.textContent = word + " ";
+                        botMessage.appendChild(wordSpan);
 
                         index++;
                         setTimeout(revealWord, speed);
@@ -233,13 +226,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function applyFadeAndShimmer() {
         const allMessages = document.querySelectorAll(".message");
-        allMessages.forEach((msg) => {
-            const shimmerSpans = msg.querySelectorAll(".shimmer-effect");
-            shimmerSpans.forEach((span) => {
-                span.classList.remove("shimmer-effect");
-            });
-        });
-
         allMessages.forEach((msg) => {
             msg.classList.remove("fade-out");
         });
@@ -339,9 +325,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // Placeholder API call to Grok (to be replaced with real API)
     async function callGrokAPI(userText) {
-        // Simulate an API call with a delay
         return new Promise((resolve) => {
             setTimeout(() => {
                 const lowerText = userText.toLowerCase();
@@ -364,7 +348,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     async function generateResponse(userText) {
         try {
-            // Replace this with a real API call to Grok
             const response = await callGrokAPI(userText);
             sendBotMessage(response, "wordFade");
         } catch (error) {
@@ -373,7 +356,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    // Memories and Favorites Functionality
     function loadMessages() {
         messages.forEach((msg) => {
             const messageContainer = document.createElement("div");
