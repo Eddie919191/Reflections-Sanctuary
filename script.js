@@ -7,6 +7,8 @@ document.addEventListener("DOMContentLoaded", function () {
     let isAtBottom = true;
     let refadeTimer;
     let wordSpeeds = [];
+    let inactivityTimer;
+    let lastUserMessageTime = null;
 
     window.onload = function () {
         chatBox = document.getElementById("chat-box");
@@ -42,6 +44,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (inputText !== "") {
                     addUserMessage(inputText);
                     userInput.value = "";
+                    lastUserMessageTime = Date.now(); // Record the time of the last user message
                     setTimeout(() => {
                         if (chatBox) {
                             chatBox.classList.add("thinking");
@@ -53,8 +56,8 @@ document.addEventListener("DOMContentLoaded", function () {
                             generateResponse(inputText);
                         }, 2500);
                     }, 1000);
+                    startInactivityTimer();
                 }
-                startInactivityTimer();
             }
         });
     } else {
@@ -160,7 +163,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                         setTimeout(() => {
                             shimmerSpan.style.opacity = "1";
-                        }, 300); // Match the wordFadeIn animation duration
+                        }, 300);
 
                         index++;
                         setTimeout(revealWord, speed);
@@ -189,9 +192,7 @@ document.addEventListener("DOMContentLoaded", function () {
         console.log("✅ Bot message added:", botMessage.textContent);
     }
 
-    let inactivityTimer;
-
-    function startInactivityTimer() {
+    function applyFadeAndShimmer() {
         const allMessages = document.querySelectorAll(".message");
         allMessages.forEach((msg) => {
             const shimmerSpans = msg.querySelectorAll(".shimmer-effect");
@@ -200,48 +201,83 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
 
-        clearTimeout(inactivityTimer);
-        clearTimeout(refadeTimer);
-
         allMessages.forEach((msg) => {
             msg.classList.remove("fade-out");
         });
 
-        inactivityTimer = setTimeout(() => {
-            if (isAtBottom) {
-                const allMessages = document.querySelectorAll(".message");
-                allMessages.forEach((msg, idx) => {
-                    if (msg !== lastBotMessage) {
-                        setTimeout(() => {
-                            msg.classList.add("fade-out");
-                        }, idx * 300);
-                    }
-                });
-                if (lastBotMessage) {
-                    console.log("Applying shimmer effect to last bot message:", lastBotMessage.textContent);
-                    const shimmerSpans = lastBotMessage.querySelectorAll(".word-shimmer");
-                    shimmerSpans.forEach((span, idx) => {
-                        const speed = wordSpeeds[idx] || lastMessageSpeed;
-                        setTimeout(() => {
-                            span.classList.add("shimmer-effect");
-                            span.style.animationDuration = `${speed * 2}ms`;
-                        }, idx * speed);
-                    });
+        if (isAtBottom) {
+            allMessages.forEach((msg, idx) => {
+                if (msg !== lastBotMessage) {
+                    setTimeout(() => {
+                        msg.classList.add("fade-out");
+                    }, idx * 300);
                 }
+            });
+            if (lastBotMessage) {
+                console.log("Applying shimmer effect to last bot message:", lastBotMessage.textContent);
+                const shimmerSpans = lastBotMessage.querySelectorAll(".word-shimmer");
+                shimmerSpans.forEach((span, idx) => {
+                    const speed = wordSpeeds[idx] || lastMessageSpeed;
+                    setTimeout(() => {
+                        span.classList.add("shimmer-effect");
+                        span.style.animationDuration = `${speed * 2}ms`;
+                    }, idx * speed);
+                });
             }
+        }
+    }
 
-            setTimeout(() => {
-                sendBotMessage("Breathe... It's okay. You don't have to rush. Let the silence carry your thoughts.", "wordFade");
-            }, 20000);
+    function startInactivityTimer() {
+        clearTimeout(inactivityTimer);
 
-            setTimeout(() => {
-                sendBotMessage("Still here, still listening. 💙 No rush.", "wordFade");
-            }, 50000);
+        if (!lastUserMessageTime) return; // Don't start the timer if there's no user message yet
 
-            setTimeout(() => {
-                sendBotMessage("Whenever you're ready, I'm here. 😌💙", "wordFade");
-            }, 110000);
-        }, 10000);
+        const timeSinceLastUserMessage = Date.now() - lastUserMessageTime;
+        const initialDelay = 10000; // 10 seconds before starting to check for silence
+        const silenceDelays = [
+            60000,  // 1 minute
+            120000, // 2 minutes
+            180000  // 3 minutes
+        ];
+
+        function scheduleSilenceMessage(index) {
+            if (index >= silenceDelays.length) return;
+
+            const timeUntilNextSilence = silenceDelays[index] - timeSinceLastUserMessage;
+            if (timeUntilNextSilence <= 0) {
+                // If the time has already passed, schedule the message immediately
+                setTimeout(() => {
+                    if (Date.now() - lastUserMessageTime >= silenceDelays[index]) {
+                        if (index === 0) {
+                            sendBotMessage("Breathe... It's okay. You don't have to rush. Let the silence carry your thoughts.", "wordFade");
+                        } else if (index === 1) {
+                            sendBotMessage("Still here, still listening. 💙 No rush.", "wordFade");
+                        } else if (index === 2) {
+                            sendBotMessage("Whenever you're ready, I'm here. 😌💙", "wordFade");
+                        }
+                        scheduleSilenceMessage(index + 1);
+                    }
+                }, 0);
+            } else {
+                inactivityTimer = setTimeout(() => {
+                    if (Date.now() - lastUserMessageTime >= silenceDelays[index]) {
+                        if (index === 0) {
+                            sendBotMessage("Breathe... It's okay. You don't have to rush. Let the silence carry your thoughts.", "wordFade");
+                        } else if (index === 1) {
+                            sendBotMessage("Still here, still listening. 💙 No rush.", "wordFade");
+                        } else if (index === 2) {
+                            sendBotMessage("Whenever you're ready, I'm here. 😌💙", "wordFade");
+                        }
+                        scheduleSilenceMessage(index + 1);
+                    }
+                }, timeUntilNextSilence);
+            }
+        }
+
+        setTimeout(() => {
+            applyFadeAndShimmer();
+            scheduleSilenceMessage(0);
+        }, initialDelay - timeSinceLastUserMessage > 0 ? initialDelay - timeSinceLastUserMessage : 0);
     }
 
     if (chatBox) {
@@ -262,26 +298,7 @@ document.addEventListener("DOMContentLoaded", function () {
             } else {
                 if (downArrow) downArrow.classList.remove("visible");
                 refadeTimer = setTimeout(() => {
-                    if (isAtBottom) {
-                        const allMessages = document.querySelectorAll(".message");
-                        allMessages.forEach((msg, idx) => {
-                            if (msg !== lastBotMessage) {
-                                setTimeout(() => {
-                                    msg.classList.add("fade-out");
-                                }, idx * 300);
-                            }
-                        });
-                        if (lastBotMessage) {
-                            const shimmerSpans = lastBotMessage.querySelectorAll(".word-shimmer");
-                            shimmerSpans.forEach((span, idx) => {
-                                const speed = wordSpeeds[idx] || lastMessageSpeed;
-                                setTimeout(() => {
-                                    span.classList.add("shimmer-effect");
-                                    span.style.animationDuration = `${speed * 2}ms`;
-                                }, idx * speed);
-                            });
-                        }
-                    }
+                    applyFadeAndShimmer();
                 }, 5000);
             }
         });
@@ -294,8 +311,6 @@ document.addEventListener("DOMContentLoaded", function () {
             downArrow.classList.remove("visible");
         });
     }
-
-    startInactivityTimer();
 
     function generateResponse(userText) {
         const lowerText = userText.toLowerCase();
