@@ -72,6 +72,10 @@ document.addEventListener("DOMContentLoaded", function () {
         userMessage.textContent = text;
 
         chatBox.appendChild(userMessage);
+        setTimeout(() => {
+            userMessage.style.opacity = "1"; // Ensure opacity is set after animation
+        }, 500); // Match the fadeInUser animation duration
+
         chatBox.scrollTop = chatBox.scrollHeight;
         isAtBottom = true;
         if (downArrow) downArrow.classList.remove("visible");
@@ -160,7 +164,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                         setTimeout(() => {
                             shimmerSpan.style.opacity = "1";
-                        }, 300); // Match the wordFadeIn animation duration
+                        }, 300);
 
                         index++;
                         setTimeout(revealWord, speed);
@@ -232,15 +236,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
             setTimeout(() => {
                 sendBotMessage("Breathe... It's okay. You don't have to rush. Let the silence carry your thoughts.", "wordFade");
-            }, 20000);
+            }, 60000); // 1 minute
 
             setTimeout(() => {
                 sendBotMessage("Still here, still listening. 💙 No rush.", "wordFade");
-            }, 50000);
+            }, 120000); // 2 minutes
 
             setTimeout(() => {
                 sendBotMessage("Whenever you're ready, I'm here. 😌💙", "wordFade");
-            }, 110000);
+            }, 180000); // 3 minutes
         }, 10000);
     }
 
