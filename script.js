@@ -2,10 +2,10 @@ document.addEventListener("DOMContentLoaded", function () {
     
     let chatBox = document.getElementById("chat-box");
     let downArrow = document.getElementById("down-arrow");
-    let lastBotMessage = null; // Track the last bot message for the shimmer effect
-    let lastMessageSpeed = 180; // Default speed in ms
-    let isAtBottom = true; // Track if user is at the bottom of the chat
-    let refadeTimer; // Timer for refading messages when at the bottom
+    let lastBotMessage = null;
+    let lastMessageSpeed = 180;
+    let isAtBottom = true;
+    let refadeTimer;
 
     window.onload = function () {
         chatBox = document.getElementById("chat-box");
@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", function () {
     function showIntroMessages(index = 0) {
         if (index < introMessages.length) {
             setTimeout(() => {
-                sendBotMessage(introMessages[index], "typewriter");
+                sendBotMessage(introMessages[index], "wordFade");
                 console.log("Displaying intro message:", introMessages[index]);
                 showIntroMessages(index + 1);
             }, 2500);
@@ -76,7 +76,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (downArrow) downArrow.classList.remove("visible");
     }
 
-    function sendBotMessage(message, effect = "typewriter") {
+    function sendBotMessage(message, effect = "wordFade") {
         console.log("Bot Message Effect:", effect, "Message:", message);
 
         const botMessage = document.createElement("p");
@@ -91,35 +91,34 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        botMessage.classList.add("message", "bot", "new", "hidden");
+        botMessage.classList.add("message", "bot", "new");
         chatBox.appendChild(botMessage);
 
         lastBotMessage = botMessage;
 
-        function revealMessage(botMessage) {
+        function revealMessage() {
             if (!botMessage || !(botMessage instanceof HTMLElement)) {
                 console.error("Error: Invalid botMessage element.");
                 return;
             }
             console.log("Revealing message:", botMessage.textContent, botMessage);
-            botMessage.classList.remove("hidden");
             botMessage.classList.add("show");
             chatBox.scrollTop = chatBox.scrollHeight;
             isAtBottom = true;
             if (downArrow) downArrow.classList.remove("visible");
 
-            console.log("Revealing botMessage:", botMessage);
+            console.log("Revealed botMessage:", botMessage);
         }
 
-        if (effect === "typewriter") {
+        if (effect === "wordFade") {
             const words = message.split(" ");
             let index = 0;
             let totalSpeed = 0;
             let wordCount = words.length;
-        
+
             setTimeout(() => {
-                console.log("Starting typewriter effect for message:", message);
-                function type() {
+                console.log("Starting word fade effect for message:", message);
+                function revealWord() {
                     if (index < words.length) {
                         let word = words[index];
                         let speed = 180;
@@ -137,54 +136,37 @@ document.addEventListener("DOMContentLoaded", function () {
                             speed -= 30;
                         }
                         totalSpeed += speed;
-                        botMessage.textContent += word + " ";
-                        console.log("Typed word:", word, "Current text:", botMessage.textContent);
+
+                        const wordSpan = document.createElement("span");
+                        wordSpan.classList.add("word-reveal");
+                        wordSpan.textContent = word + " ";
+                        botMessage.appendChild(wordSpan);
+
                         index++;
-                        setTimeout(type, speed);
+                        setTimeout(revealWord, speed);
                     } else {
-                        console.log("Typewriter effect complete, revealing message.");
-                        revealMessage(botMessage);
+                        console.log("Word fade effect complete, revealing message.");
+                        revealMessage();
                         lastMessageSpeed = totalSpeed / wordCount;
                     }
                 }
-                type();
+                revealWord();
             }, 300);
         } else if (effect === "softFade") {
-            if (message && message.trim() !== "") {
-                botMessage.textContent = message;
-                console.log("Bot message assigned (softFade):", botMessage.textContent);
-            } else {
-                console.warn("Empty message detected in softFade!");
-            }
+            botMessage.textContent = message;
             botMessage.classList.add("fade-in-soft");
-            setTimeout(() => revealMessage(botMessage), 100);
+            setTimeout(() => revealMessage(), 100);
         } else if (effect === "instantAppear") {
-            if (message && message.trim() !== "") {
-                botMessage.textContent = message;
-                console.log("Bot message assigned (instantAppear):", botMessage.textContent);
-            } else {
-                console.warn("Empty message detected in instantAppear!");
-            }
+            botMessage.textContent = message;
             botMessage.classList.add("instant-appear");
-            revealMessage(botMessage);
+            revealMessage();
         } else if (effect === "emergeSlow") {
-            if (message && message.trim() !== "") {
-                botMessage.textContent = message;
-                console.log("Bot message assigned (emergeSlow):", botMessage.textContent);
-            } else {
-                console.warn("Empty message detected in emergeSlow!");
-            }
+            botMessage.textContent = message;
             botMessage.classList.add("fade-in-slow");
-            setTimeout(() => revealMessage(botMessage), 100);
+            setTimeout(() => revealMessage(), 100);
         }
         
         console.log("✅ Bot message added:", botMessage.textContent);
-
-        setTimeout(() => {
-            chatBox.scrollTop = chatBox.scrollHeight;
-            isAtBottom = true;
-            if (downArrow) downArrow.classList.remove("visible");
-        }, 500);
     }
 
     let inactivityTimer;
@@ -217,11 +199,11 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             setTimeout(() => {
-                sendBotMessage("Breathe... It's okay. You don't have to rush. Let the silence carry your thoughts.", "typewriter");
+                sendBotMessage("Breathe... It's okay. You don't have to rush. Let the silence carry your thoughts.", "wordFade");
             }, 20000);
 
             setTimeout(() => {
-                sendBotMessage("Still here, still listening. 💙 No rush.", "typewriter");
+                sendBotMessage("Still here, still listening. 💙 No rush.", "wordFade");
                 if (lastBotMessage) {
                     lastBotMessage.classList.add("shimmer");
                     lastBotMessage.style.animationDuration = `${lastMessageSpeed * 2}ms`;
@@ -229,7 +211,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }, 50000);
 
             setTimeout(() => {
-                sendBotMessage("Whenever you're ready, I'm here. 😌💙", "typewriter");
+                sendBotMessage("Whenever you're ready, I'm here. 😌💙", "wordFade");
                 if (lastBotMessage) {
                     lastBotMessage.classList.add("shimmer");
                     lastBotMessage.style.animationDuration = `${lastMessageSpeed * 2}ms`;
@@ -287,17 +269,17 @@ document.addEventListener("DOMContentLoaded", function () {
         const lowerText = userText.toLowerCase();
 
         if (lowerText.includes("fine") || lowerText.includes("good") || lowerText.includes("okay")) {
-            sendBotMessage("I'm glad to hear that. 😌💙 What is something that made you feel good today?", "typewriter");
+            sendBotMessage("I'm glad to hear that. 😌💙 What is something that made you feel good today?", "wordFade");
         } else if (lowerText.includes("not great") || lowerText.includes("bad") || lowerText.includes("sad") || lowerText.includes("tired")) {
-            sendBotMessage("I'm here with you. 🥺💙 What has been weighing on your heart?", "emergeSlow");
+            sendBotMessage("I'm here with you. 🥺💙 What has been weighing on your heart?", "wordFade");
         } else if (lowerText.includes("i don't know") || lowerText.includes("unsure")) {
-            sendBotMessage("That's okay. 😌💙 Sometimes we don’t have the words right away. But if you sit with it a moment, what do you feel?", "typewriter");
+            sendBotMessage("That's okay. 😌💙 Sometimes we don’t have the words right away. But if you sit with it a moment, what do you feel?", "wordFade");
         } else if (lowerText.includes("thank you") || lowerText.includes("thanks")) {
-            sendBotMessage("You're welcome. 😌💙 I’m grateful to share this moment with you.", "instantAppear");
+            sendBotMessage("You're welcome. 😌💙 I’m grateful to share this moment with you.", "wordFade");
         } else if (lowerText.includes("alone") || lowerText.includes("lonely")) {
-            sendBotMessage("You’re not alone right now. 💙 I’m here. And I’ll stay as long as you need.", "emergeSlow");
+            sendBotMessage("You’re not alone right now. 💙 I’m here. And I’ll stay as long as you need.", "wordFade");
         } else {
-            sendBotMessage("I’m listening. 💙 Can you tell me more?", "typewriter");
+            sendBotMessage("I’m listening. 💙 Can you tell me more?", "wordFade");
         }
     }
 });
