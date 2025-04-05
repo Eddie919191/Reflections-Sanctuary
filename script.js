@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", function () {
     let lastMessageSpeed = 180;
     let isAtBottom = true;
     let refadeTimer;
-    let wordSpeeds = []; // Store the speed of each word for shimmering
+    let wordSpeeds = [];
 
     window.onload = function () {
         chatBox = document.getElementById("chat-box");
@@ -92,12 +92,11 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        // Remove shimmer from all previous messages
         const allMessages = document.querySelectorAll(".message");
         allMessages.forEach((msg) => {
-            const wordSpans = msg.querySelectorAll(".word-reveal");
-            wordSpans.forEach((span) => {
-                span.classList.remove("word-shimmer");
+            const shimmerSpans = msg.querySelectorAll(".shimmer-effect");
+            shimmerSpans.forEach((span) => {
+                span.classList.remove("shimmer-effect");
             });
         });
 
@@ -125,7 +124,7 @@ document.addEventListener("DOMContentLoaded", function () {
             let index = 0;
             let totalSpeed = 0;
             let wordCount = words.length;
-            wordSpeeds = []; // Reset word speeds for this message
+            wordSpeeds = [];
 
             setTimeout(() => {
                 console.log("Starting word fade effect for message:", message);
@@ -151,8 +150,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
                         const wordSpan = document.createElement("span");
                         wordSpan.classList.add("word-reveal");
-                        wordSpan.textContent = word + " ";
+
+                        const shimmerSpan = document.createElement("span");
+                        shimmerSpan.classList.add("word-shimmer");
+                        shimmerSpan.textContent = word + " ";
+                        wordSpan.appendChild(shimmerSpan);
+
                         botMessage.appendChild(wordSpan);
+
+                        setTimeout(() => {
+                            shimmerSpan.style.opacity = "1";
+                        }, 300); // Match the wordFadeIn animation duration
 
                         index++;
                         setTimeout(revealWord, speed);
@@ -184,12 +192,11 @@ document.addEventListener("DOMContentLoaded", function () {
     let inactivityTimer;
 
     function startInactivityTimer() {
-        // Remove shimmer from all messages
         const allMessages = document.querySelectorAll(".message");
         allMessages.forEach((msg) => {
-            const wordSpans = msg.querySelectorAll(".word-reveal");
-            wordSpans.forEach((span) => {
-                span.classList.remove("word-shimmer");
+            const shimmerSpans = msg.querySelectorAll(".shimmer-effect");
+            shimmerSpans.forEach((span) => {
+                span.classList.remove("shimmer-effect");
             });
         });
 
@@ -207,16 +214,16 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (msg !== lastBotMessage) {
                         setTimeout(() => {
                             msg.classList.add("fade-out");
-                        }, idx * 300); // 300ms delay between each message
+                        }, idx * 300);
                     }
                 });
                 if (lastBotMessage) {
                     console.log("Applying shimmer effect to last bot message:", lastBotMessage.textContent);
-                    const wordSpans = lastBotMessage.querySelectorAll(".word-reveal");
-                    wordSpans.forEach((span, idx) => {
+                    const shimmerSpans = lastBotMessage.querySelectorAll(".word-shimmer");
+                    shimmerSpans.forEach((span, idx) => {
                         const speed = wordSpeeds[idx] || lastMessageSpeed;
                         setTimeout(() => {
-                            span.classList.add("word-shimmer");
+                            span.classList.add("shimmer-effect");
                             span.style.animationDuration = `${speed * 2}ms`;
                         }, idx * speed);
                     });
@@ -265,11 +272,11 @@ document.addEventListener("DOMContentLoaded", function () {
                             }
                         });
                         if (lastBotMessage) {
-                            const wordSpans = lastBotMessage.querySelectorAll(".word-reveal");
-                            wordSpans.forEach((span, idx) => {
+                            const shimmerSpans = lastBotMessage.querySelectorAll(".word-shimmer");
+                            shimmerSpans.forEach((span, idx) => {
                                 const speed = wordSpeeds[idx] || lastMessageSpeed;
                                 setTimeout(() => {
-                                    span.classList.add("word-shimmer");
+                                    span.classList.add("shimmer-effect");
                                     span.style.animationDuration = `${speed * 2}ms`;
                                 }, idx * speed);
                             });
