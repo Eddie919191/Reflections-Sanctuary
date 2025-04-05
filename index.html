@@ -3,16 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reflections 💙</title>
+    <title>Reflections Sanctuary</title>
     <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="chat-container">
-        <div id="chat-box">
+    <div id="chat-container">
+        <div id="chat-box"></div>
+        <div id="action-buttons">
+            <button id="view-memories">View Memories</button>
+            <button id="view-favorites">View Favorites</button>
         </div>
-        <div class="down-arrow" id="down-arrow">↓</div>
-        <input type="text" id="user-input" placeholder="Type here..." autofocus>
+        <input type="text" id="user-input" placeholder="Share your thoughts...">
+        <div id="down-arrow">↓</div>
     </div>
+
+    <div id="memories-modal" class="modal">
+        <div class="modal-content">
+            <span id="close-memories" class="close">&times;</span>
+            <h2>Memories</h2>
+            <div id="memories-list"></div>
+        </div>
+    </div>
+
+    <div id="favorites-modal" class="modal">
+        <div class="modal-content">
+            <span id="close-favorites" class="close">&times;</span>
+            <h2>Favorites</h2>
+            <div id="favorites-list"></div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
