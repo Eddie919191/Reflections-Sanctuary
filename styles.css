@@ -108,18 +108,11 @@
 /* Default bot messages (like the intro ones) */
 .message.bot {
     display: inline-block;
-    white-space: normal; /* Allow wrapping */
+    white-space: normal;
     overflow: hidden;
-    max-width: 90%; /* Prevent too-wide messages */
+    max-width: 90%;
     word-wrap: break-word;
     line-height: 1.4;
-    opacity: 0; /* Start with opacity 0 to match revealText */
-    clip-path: inset(0 100% 0 0); /* Hide text initially */
-    animation: revealText 0.5s ease-in-out; /* Shortened to avoid overlap with typewriter */
-}
-.message.bot.new {
-    clip-path: inset(0 100% 0 0);
-    animation: revealText 0.5s ease-in-out;
 }
 /* Bot message animations */
 @keyframes softFade {
@@ -128,10 +121,8 @@
 }
 .message.bot.new.show {
     display: block !important;
-    opacity: 1 !important;
     color: white !important;
     visibility: visible !important;
-    animation: revealText 0.5s ease-out forwards;
 }
 @keyframes emergeSlow {
     from { opacity: 0; filter: blur(5px); }
@@ -141,22 +132,28 @@
     from { opacity: 0; transform: scale(0.95); }
     to { opacity: 1; transform: scale(1); }
 }
-@keyframes revealText {
-    from {
-        opacity: 0;
-        clip-path: inset(0 100% 0 0);
-    }
-    to {
-        opacity: 1;
-        clip-path: inset(0 0 0 0);
-    }
-}
 @keyframes fadeInUser {
     from {
         opacity: 0;
     }
     to {
         opacity: 1;
+    }
+}
+.word-reveal {
+    opacity: 0;
+    display: inline-block;
+    animation: wordFadeIn 0.3s ease-in-out forwards;
+}
+
+@keyframes wordFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 .reveal {
@@ -201,7 +198,7 @@
     outline: none;
 }
 .fade-out {
-    opacity: 0;
+    opacity: 0 !important;
     transition: opacity 2s ease-in-out;
 }
 /* Shimmer effect for long silences */
