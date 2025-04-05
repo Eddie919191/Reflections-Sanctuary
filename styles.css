@@ -142,10 +142,8 @@
     }
 }
 .word-reveal {
-    opacity: 0;
     display: inline-block;
     white-space: pre;
-    animation: wordFadeIn 0.3s ease-in-out forwards;
 }
 
 @keyframes wordFadeIn {
@@ -205,6 +203,14 @@
 }
 
 .word-shimmer {
+    opacity: 0;
+    display: inline-block;
+    white-space: pre;
+    animation: wordFadeIn 0.3s ease-in-out forwards;
+}
+
+.shimmer-effect {
+    display: inline-block;
     animation: wordShimmer 1s ease-in-out infinite;
 }
 @keyframes wordShimmer {
