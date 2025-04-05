@@ -1,24 +1,38 @@
 document.addEventListener("DOMContentLoaded", function () {
-    
-    let chatBox = document.getElementById("chat-box");
-    let downArrow = document.getElementById("down-arrow");
+    const chatBox = document.getElementById("chat-box");
+    const downArrow = document.getElementById("down-arrow");
     let lastBotMessage = null;
-    let lastMessageSpeed = 180;
     let isAtBottom = true;
     let refadeTimer;
-    let wordSpeeds = [];
     let inactivityTimer;
     let lastUserMessageTime = null;
-    let messages = JSON.parse(localStorage.getItem("messages")) || [];
-    let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
+    let messages = [];
+    let favorites = [];
 
-    window.onload = function () {
-        chatBox = document.getElementById("chat-box");
-        downArrow = document.getElementById("down-arrow");
-        console.log("ChatBox found globally:", chatBox);
-        console.log("DownArrow found globally:", downArrow);
+    try {
+        const storedMessages = localStorage.getItem("messages");
+        messages = storedMessages ? JSON.parse(storedMessages) : [];
+    } catch (error) {
+        console.error("Error loading messages from localStorage:", error);
+        messages = [];
+    }
+
+    try {
+        const storedFavorites = localStorage.getItem("favorites");
+        favorites = storedFavorites ? JSON.parse(storedFavorites) : [];
+    } catch (error) {
+        console.error("Error loading favorites from localStorage:", error);
+        favorites = [];
+    }
+
+    console.log("ChatBox found globally:", chatBox);
+    console.log("DownArrow found globally:", downArrow);
+
+    if (chatBox) {
         loadMessages();
-    };
+    } else {
+        console.error("Error: #chat-box element not found on page load.");
+    }
 
     const introMessages = [
         ". . .",
@@ -78,7 +92,12 @@ document.addEventListener("DOMContentLoaded", function () {
         const messageId = Date.now();
         const messageData = { id: messageId, text, type: "user", timestamp: new Date().toISOString() };
         messages.push(messageData);
-        localStorage.setItem("messages", JSON.stringify(messages));
+
+        try {
+            localStorage.setItem("messages", JSON.stringify(messages));
+        } catch (error) {
+            console.error("Error saving messages to localStorage:", error);
+        }
 
         const messageContainer = document.createElement("div");
         messageContainer.classList.add("message-container");
@@ -108,14 +127,19 @@ document.addEventListener("DOMContentLoaded", function () {
         const messageId = Date.now();
         const messageData = { id: messageId, text: message, type: "bot", timestamp: new Date().toISOString() };
         messages.push(messageData);
-        localStorage.setItem("messages", JSON.stringify(messages));
+
+        try {
+            localStorage.setItem("messages", JSON.stringify(messages));
+        } catch (error) {
+            console.error("Error saving messages to localStorage:", error);
+        }
 
         const messageContainer = document.createElement("div");
         messageContainer.classList.add("message-container");
         messageContainer.dataset.id = messageId;
 
         const botMessage = document.createElement("p");
-        botMessage.classList.add("message", "bot", "new");
+        botMessage.classList.add("message", "bot");
 
         const favoriteBtn = document.createElement("button");
         favoriteBtn.classList.add("favorite-btn");
@@ -155,58 +179,35 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (effect === "wordFade") {
             const words = message.split(" ");
-            let index = 0;
-            let totalSpeed = 0;
-            let wordCount = words.length;
-            wordSpeeds = [];
+            let totalDelay = 0;
+
+            words.forEach((word, index) => {
+                let speed = 180;
+                if (word.length < 3) speed = 60;
+                else if (word.length > 7) speed = 220;
+                if (word.includes(",")) speed += 600;
+                if (word.includes("—")) speed += 800;
+                if (word.includes("...")) speed += 1000;
+                if (word.includes("?") || word.includes("!")) speed += 800;
+                if (word.includes(".")) speed += 700;
+                if (message.toLowerCase().includes("here with you") || message.toLowerCase().includes("no rush")) {
+                    speed += 150;
+                } else if (message.toLowerCase().includes("glad to hear") || message.toLowerCase().includes("grateful")) {
+                    speed -= 30;
+                }
+
+                const wordSpan = document.createElement("span");
+                wordSpan.classList.add("word-reveal");
+                wordSpan.textContent = word + " ";
+                wordSpan.style.animationDelay = `${totalDelay}ms`;
+                botMessage.appendChild(wordSpan);
+
+                totalDelay += speed;
+            });
 
             setTimeout(() => {
-                console.log("Starting word fade effect for message:", message);
-                function revealWord() {
-                    if (index < words.length) {
-                        let word = words[index];
-                        let speed = 180;
-                        if (word.length < 3) speed = 60;
-                        else if (word.length > 7) speed = 220;
-                        else speed = 180;
-                        if (word.includes(",")) speed += 600;
-                        if (word.includes("—")) speed += 800;
-                        if (word.includes("...")) speed += 1000;
-                        if (word.includes("?") || word.includes("!")) speed += 800;
-                        if (word.includes(".")) speed += 700;
-                        if (message.toLowerCase().includes("here with you") || message.toLowerCase().includes("no rush")) {
-                            speed += 150;
-                        } else if (message.toLowerCase().includes("glad to hear") || message.toLowerCase().includes("grateful")) {
-                            speed -= 30;
-                        }
-                        totalSpeed += speed;
-                        wordSpeeds.push(speed);
-
-                        const wordSpan = document.createElement("span");
-                        wordSpan.classList.add("word-reveal");
-                        /* Commented out shimmer-related code
-                        const shimmerSpan = document.createElement("span");
-                        shimmerSpan.classList.add("word-shimmer");
-                        shimmerSpan.textContent = word + " ";
-                        wordSpan.appendChild(shimmerSpan);
-
-                        setTimeout(() => {
-                            shimmerSpan.style.opacity = "1";
-                        }, 300);
-                        */
-                        wordSpan.textContent = word + " ";
-                        botMessage.appendChild(wordSpan);
-
-                        index++;
-                        setTimeout(revealWord, speed);
-                    } else {
-                        console.log("Word fade effect complete, revealing message.");
-                        revealMessage();
-                        lastMessageSpeed = totalSpeed / wordCount;
-                    }
-                }
-                revealWord();
-            }, 300);
+                revealMessage();
+            }, totalDelay + 300);
         } else if (effect === "softFade") {
             botMessage.textContent = message;
             botMessage.classList.add("fade-in-soft");
@@ -224,7 +225,7 @@ document.addEventListener("DOMContentLoaded", function () {
         console.log("✅ Bot message added:", botMessage.textContent);
     }
 
-    function applyFadeAndShimmer() {
+    function applyFadeEffect() {
         const allMessages = document.querySelectorAll(".message");
         allMessages.forEach((msg) => {
             msg.classList.remove("fade-out");
@@ -233,9 +234,8 @@ document.addEventListener("DOMContentLoaded", function () {
         if (isAtBottom) {
             allMessages.forEach((msg, idx) => {
                 if (msg !== lastBotMessage) {
-                    setTimeout(() => {
-                        msg.classList.add("fade-out");
-                    }, idx * 300);
+                    msg.style.transitionDelay = `${idx * 0.3}s`;
+                    msg.classList.add("fade-out");
                 }
             });
         }
@@ -246,51 +246,42 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (!lastUserMessageTime) return;
 
-        const timeSinceLastUserMessage = Date.now() - lastUserMessageTime;
         const initialDelay = 10000;
-        const silenceDelays = [
-            60000,
-            120000,
-            180000
-        ];
+        const silenceDelays = [60000, 120000, 180000];
+        let silenceIndex = 0;
 
-        function scheduleSilenceMessage(index) {
-            if (index >= silenceDelays.length) return;
+        function checkInactivity() {
+            const timeSinceLastUserMessage = Date.now() - lastUserMessageTime;
 
-            const timeUntilNextSilence = silenceDelays[index] - timeSinceLastUserMessage;
-            if (timeUntilNextSilence <= 0) {
-                setTimeout(() => {
-                    if (Date.now() - lastUserMessageTime >= silenceDelays[index]) {
-                        if (index === 0) {
-                            sendBotMessage("Breathe... It's okay. You don't have to rush. Let the silence carry your thoughts.", "wordFade");
-                        } else if (index === 1) {
-                            sendBotMessage("Still here, still listening. 💙 No rush.", "wordFade");
-                        } else if (index === 2) {
-                            sendBotMessage("Whenever you're ready, I'm here. 😌💙", "wordFade");
-                        }
-                        scheduleSilenceMessage(index + 1);
-                    }
-                }, 0);
-            } else {
-                inactivityTimer = setTimeout(() => {
-                    if (Date.now() - lastUserMessageTime >= silenceDelays[index]) {
-                        if (index === 0) {
-                            sendBotMessage("Breathe... It's okay. You don't have to rush. Let the silence carry your thoughts.", "wordFade");
-                        } else if (index === 1) {
-                            sendBotMessage("Still here, still listening. 💙 No rush.", "wordFade");
-                        } else if (index === 2) {
-                            sendBotMessage("Whenever you're ready, I'm here. 😌💙", "wordFade");
-                        }
-                        scheduleSilenceMessage(index + 1);
-                    }
-                }, timeUntilNextSilence);
+            if (timeSinceLastUserMessage >= initialDelay && isAtBottom) {
+                applyFadeEffect();
+            }
+
+            if (silenceIndex >= silenceDelays.length) return;
+
+            if (timeSinceLastUserMessage >= silenceDelays[silenceIndex]) {
+                if (silenceIndex === 0) {
+                    sendBotMessage("Breathe... It's okay. You don't have to rush. Let the silence carry your thoughts.", "wordFade");
+                } else if (silenceIndex === 1) {
+                    sendBotMessage("Still here, still listening. 💙 No rush.", "wordFade");
+                } else if (silenceIndex === 2) {
+                    sendBotMessage("Whenever you're ready, I'm here. 😌💙", "wordFade");
+                }
+                silenceIndex++;
+            }
+
+            const nextCheck = silenceIndex < silenceDelays.length
+                ? silenceDelays[silenceIndex] - timeSinceLastUserMessage
+                : 1000;
+
+            if (nextCheck > 0) {
+                inactivityTimer = setTimeout(checkInactivity, nextCheck);
             }
         }
 
-        setTimeout(() => {
-            applyFadeAndShimmer();
-            scheduleSilenceMessage(0);
-        }, initialDelay - timeSinceLastUserMessage > 0 ? initialDelay - timeSinceLastUserMessage : 0);
+        const timeSinceLastUserMessage = Date.now() - lastUserMessageTime;
+        const firstCheckDelay = Math.max(initialDelay - timeSinceLastUserMessage, 0);
+        inactivityTimer = setTimeout(checkInactivity, firstCheckDelay);
     }
 
     if (chatBox) {
@@ -311,7 +302,7 @@ document.addEventListener("DOMContentLoaded", function () {
             } else {
                 if (downArrow) downArrow.classList.remove("visible");
                 refadeTimer = setTimeout(() => {
-                    applyFadeAndShimmer();
+                    applyFadeEffect();
                 }, 5000);
             }
         });
@@ -365,6 +356,9 @@ document.addEventListener("DOMContentLoaded", function () {
             const messageEl = document.createElement("p");
             messageEl.classList.add("message", msg.type);
             messageEl.textContent = msg.text;
+            if (msg.type === "bot") {
+                messageEl.classList.add("show");
+            }
 
             const favoriteBtn = document.createElement("button");
             favoriteBtn.classList.add("favorite-btn");
@@ -397,7 +391,11 @@ document.addEventListener("DOMContentLoaded", function () {
             favoriteBtn.classList.add("favorited");
         }
 
-        localStorage.setItem("favorites", JSON.stringify(favorites));
+        try {
+            localStorage.setItem("favorites", JSON.stringify(favorites));
+        } catch (error) {
+            console.error("Error saving favorites to localStorage:", error);
+        }
     }
 
     const viewMemoriesBtn = document.getElementById("view-memories");
@@ -405,47 +403,70 @@ document.addEventListener("DOMContentLoaded", function () {
     const closeMemories = document.getElementById("close-memories");
     const memoriesList = document.getElementById("memories-list");
 
-    viewMemoriesBtn.addEventListener("click", () => {
-        memoriesList.innerHTML = "";
-        messages.forEach((msg) => {
-            const messageEl = document.createElement("p");
-            messageEl.classList.add("message", msg.type);
-            messageEl.textContent = `[${new Date(msg.timestamp).toLocaleString()}] ${msg.text}`;
-            memoriesList.appendChild(messageEl);
+    if (viewMemoriesBtn && memoriesModal && closeMemories && memoriesList) {
+        viewMemoriesBtn.addEventListener("click", () => {
+            memoriesList.innerHTML = "";
+            messages.forEach((msg) => {
+                const messageEl = document.createElement("p");
+                messageEl.classList.add("message", msg.type);
+                messageEl.textContent = `[${new Date(msg.timestamp).toLocaleString()}] ${msg.text}`;
+                memoriesList.appendChild(messageEl);
+            });
+            memoriesModal.style.display = "block";
+            memoriesModal.focus();
         });
-        memoriesModal.style.display = "block";
-    });
 
-    closeMemories.addEventListener("click", () => {
-        memoriesModal.style.display = "none";
-    });
+        closeMemories.addEventListener("click", () => {
+            memoriesModal.style.display = "none";
+        });
+    } else {
+        console.error("Error: One or more memories modal elements not found.");
+    }
 
     const viewFavoritesBtn = document.getElementById("view-favorites");
     const favoritesModal = document.getElementById("favorites-modal");
     const closeFavorites = document.getElementById("close-favorites");
     const favoritesList = document.getElementById("favorites-list");
 
-    viewFavoritesBtn.addEventListener("click", () => {
-        favoritesList.innerHTML = "";
-        favorites.forEach((fav) => {
-            const messageEl = document.createElement("p");
-            messageEl.classList.add("message", fav.type);
-            messageEl.textContent = `[${new Date(fav.timestamp).toLocaleString()}] ${fav.text}`;
-            favoritesList.appendChild(messageEl);
+    if (viewFavoritesBtn && favoritesModal && closeFavorites && favoritesList) {
+        viewFavoritesBtn.addEventListener("click", () => {
+            favoritesList.innerHTML = "";
+            favorites.forEach((fav) => {
+                const messageEl = document.createElement("p");
+                messageEl.classList.add("message", fav.type);
+                messageEl.textContent = `[${new Date(fav.timestamp).toLocaleString()}] ${fav.text}`;
+                favoritesList.appendChild(messageEl);
+            });
+            favoritesModal.style.display = "block";
+            favoritesModal.focus();
         });
-        favoritesModal.style.display = "block";
-    });
 
-    closeFavorites.addEventListener("click", () => {
-        favoritesModal.style.display = "none";
-    });
-
-    window.addEventListener("click", (event) => {
-        if (event.target === memoriesModal) {
-            memoriesModal.style.display = "none";
-        }
-        if (event.target === favoritesModal) {
+        closeFavorites.addEventListener("click", () => {
             favoritesModal.style.display = "none";
-        }
-    });
+        });
+    } else {
+        console.error("Error: One or more favorites modal elements not found.");
+    }
+
+    if (memoriesModal && favoritesModal) {
+        window.addEventListener("click", (event) => {
+            if (event.target === memoriesModal) {
+                memoriesModal.style.display = "none";
+            }
+            if (event.target === favoritesModal) {
+                favoritesModal.style.display = "none";
+            }
+        });
+
+        window.addEventListener("keydown", (event) => {
+            if (event.key === "Escape") {
+                if (memoriesModal.style.display === "block") {
+                    memoriesModal.style.display = "none";
+                }
+                if (favoritesModal.style.display === "block") {
+                    favoritesModal.style.display = "none";
+                }
+            }
+        });
+    }
 });
