@@ -200,6 +200,10 @@
     font-size: 16px;
     outline: none;
 }
+.fade-out {
+    opacity: 0;
+    transition: opacity 2s ease-in-out;
+}
 /* Shimmer effect for long silences */
 .shimmer {
     animation: shimmer 3s ease-in-out infinite;
@@ -242,4 +246,26 @@
 /* Soft glow effect */
 #user-input:focus {
     box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+.down-arrow {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.2);
+    color: #1e90ff;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    font-size: 24px;
+    box-shadow: 0 0 10px rgba(30, 144, 255, 0.3);
+}
+
+.down-arrow.visible {
+    opacity: 1;
 }
