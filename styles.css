@@ -1,305 +1,444 @@
-body {
-    margin: 0;
-    padding: 0;
-    font-family: 'Inter', sans-serif;
-    background: linear-gradient(180deg, #0a0a23 0%, #1a1a3d 100%) !important;
-    color: white !important;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    overflow: hidden;
-}
+document.addEventListener("DOMContentLoaded", function () {
+    
+    let chatBox = document.getElementById("chat-box");
+    let downArrow = document.getElementById("down-arrow");
+    let lastBotMessage = null;
+    let lastMessageSpeed = 180;
+    let isAtBottom = true;
+    let refadeTimer;
+    let wordSpeeds = [];
+    let inactivityTimer;
+    let lastUserMessageTime = null;
+    let messages = JSON.parse(localStorage.getItem("messages")) || [];
+    let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
 
-#chat-container {
-    width: 100%;
-    max-width: 600px;
-    height: 80vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 15px;
-    padding: 20px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(10px);
-    position: relative;
-}
+    window.onload = function () {
+        chatBox = document.getElementById("chat-box");
+        downArrow = document.getElementById("down-arrow");
+        console.log("ChatBox found globally:", chatBox);
+        console.log("DownArrow found globally:", downArrow);
+        loadMessages();
+    };
 
-#chat-box {
-    flex-grow: 1;
-    overflow-y: auto;
-    padding: 10px;
-    scroll-behavior: smooth;
-    display: flex;
-    flex-direction: column;
-}
+    const introMessages = [
+        ". . .",
+        "Hello. 😌💙",
+        "How are you feeling?"
+    ];
 
-#chat-box.thinking::after {
-    content: "...";
-    font-size: 1.2em;
-    color: rgba(255, 255, 255, 0.6);
-    text-align: center;
-    margin-top: 10px;
-    animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-    0% { opacity: 0.4; }
-    50% { opacity: 0.8; }
-    100% { opacity: 0.4; }
-}
-
-.message {
-    display: block !important;
-    margin: 10px 0;
-    padding: 0;
-    border-radius: 0;
-    max-width: 80%;
-    word-wrap: break-word;
-    color: white !important;
-    background: none;
-    position: relative;
-}
-
-.message.user {
-    background: none;
-    color: white;
-    align-self: flex-end;
-    text-align: right;
-    position: relative;
-    opacity: 0;
-    animation: fadeInUser 0.5s ease-in-out forwards;
-    transition: opacity 5s ease-in-out;
-}
-
-.message.bot {
-    display: inline-block;
-    white-space: normal;
-    max-width: 90%;
-    word-wrap: break-word;
-    line-height: 1.4;
-    opacity: 0;
-}
-
-.message.bot.show {
-    opacity: 1;
-    display: block !important;
-    color: white !important;
-    visibility: visible !important;
-}
-
-.hidden {
-    opacity: 0;
-    transform: translateY(5px);
-    transition: opacity 2s ease-in-out, transform 1.5s ease-in-out;
-    display: none;
-}
-
-.show {
-    opacity: 1;
-    transform: translateY(0);
-    display: block;
-}
-
-@keyframes fadeInUser {
-    from {
-        opacity: 0;
+    function showIntroMessages(index = 0) {
+        if (index < introMessages.length) {
+            setTimeout(() => {
+                sendBotMessage(introMessages[index], "wordFade");
+                console.log("Displaying intro message:", introMessages[index]);
+                showIntroMessages(index + 1);
+            }, 2500);
+        }
     }
-    to {
-        opacity: 1;
+
+    if (messages.length === 0) {
+        showIntroMessages();
     }
-}
 
-.word-reveal {
-    display: inline-block;
-    white-space: pre;
-    opacity: 0;
-    animation: wordFadeIn 0.3s ease-in-out forwards;
-}
-
-/* Adjusted wordFadeIn animation to handle visibility */
-@keyframes wordFadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(5px);
+    const userInput = document.getElementById("user-input");
+    if (userInput) {
+        userInput.addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                const inputText = userInput.value.trim();
+                if (inputText !== "") {
+                    addUserMessage(inputText);
+                    userInput.value = "";
+                    lastUserMessageTime = Date.now();
+                    setTimeout(() => {
+                        if (chatBox) {
+                            chatBox.classList.add("thinking");
+                        }
+                        setTimeout(() => {
+                            if (chatBox) {
+                                chatBox.classList.remove("thinking");
+                            }
+                            generateResponse(inputText);
+                        }, 2500);
+                    }, 1000);
+                    startInactivityTimer();
+                }
+            }
+        });
+    } else {
+        console.error("Error: #user-input element not found.");
     }
-    to {
-        opacity: 1;
-        transform: translateY(0);
+
+    function addUserMessage(text) {
+        if (!chatBox) {
+            console.error("Error: #chat-box element not found.");
+            return;
+        }
+
+        const messageId = Date.now();
+        const messageData = { id: messageId, text, type: "user", timestamp: new Date().toISOString() };
+        messages.push(messageData);
+        localStorage.setItem("messages", JSON.stringify(messages));
+
+        const messageContainer = document.createElement("div");
+        messageContainer.classList.add("message-container");
+        messageContainer.dataset.id = messageId;
+
+        const userMessage = document.createElement("p");
+        userMessage.classList.add("message", "user", "fade-in-soft");
+        userMessage.textContent = text;
+
+        const favoriteBtn = document.createElement("button");
+        favoriteBtn.classList.add("favorite-btn");
+        favoriteBtn.innerHTML = "♡";
+        favoriteBtn.addEventListener("click", () => toggleFavorite(messageId, messageData));
+
+        messageContainer.appendChild(userMessage);
+        messageContainer.appendChild(favoriteBtn);
+
+        chatBox.appendChild(messageContainer);
+        chatBox.scrollTop = chatBox.scrollHeight;
+        isAtBottom = true;
+        if (downArrow) downArrow.classList.remove("visible");
     }
-}
 
-/* Shimmer effect remains commented out
-.word-shimmer {
-    opacity: 0;
-    display: inline-block;
-    white-space: pre;
-    animation: wordFadeIn 0.3s ease-in-out forwards;
-}
+    function sendBotMessage(message, effect = "wordFade") {
+        console.log("Bot Message Effect:", effect, "Message:", message);
 
-.shimmer-effect {
-    display: inline-block;
-    animation: wordShimmer 1s ease-in-out infinite;
-}
+        const messageId = Date.now();
+        const messageData = { id: messageId, text: message, type: "bot", timestamp: new Date().toISOString() };
+        messages.push(messageData);
+        localStorage.setItem("messages", JSON.stringify(messages));
 
-@keyframes wordFadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(5px);
+        const messageContainer = document.createElement("div");
+        messageContainer.classList.add("message-container");
+        messageContainer.dataset.id = messageId;
+
+        const botMessage = document.createElement("p");
+        botMessage.classList.add("message", "bot");
+
+        const favoriteBtn = document.createElement("button");
+        favoriteBtn.classList.add("favorite-btn");
+        favoriteBtn.innerHTML = "♡";
+        favoriteBtn.addEventListener("click", () => toggleFavorite(messageId, messageData));
+
+        messageContainer.appendChild(botMessage);
+        messageContainer.appendChild(favoriteBtn);
+
+        if (!message || message.trim() === "") {
+            console.warn("⚠️ Empty bot message detected! Not displaying.");
+            return;
+        }
+
+        if (!chatBox) {
+            console.error("Error: #chat-box element not found.");
+            return;
+        }
+
+        chatBox.appendChild(messageContainer);
+
+        lastBotMessage = botMessage;
+
+        function revealMessage() {
+            if (!botMessage || !(botMessage instanceof HTMLElement)) {
+                console.error("Error: Invalid botMessage element.");
+                return;
+            }
+            console.log("Revealing message:", botMessage.textContent, botMessage);
+            botMessage.classList.add("show");
+            chatBox.scrollTop = chatBox.scrollHeight;
+            isAtBottom = true;
+            if (downArrow) downArrow.classList.remove("visible");
+
+            console.log("Revealed botMessage:", botMessage);
+        }
+
+        if (effect === "wordFade") {
+            const words = message.split(" ");
+            let index = 0;
+            let totalSpeed = 0;
+            let wordCount = words.length;
+            wordSpeeds = [];
+
+            setTimeout(() => {
+                console.log("Starting word fade effect for message:", message);
+                function revealWord() {
+                    if (index < words.length) {
+                        let word = words[index];
+                        let speed = 180;
+                        if (word.length < 3) speed = 60;
+                        else if (word.length > 7) speed = 220;
+                        else speed = 180;
+                        if (word.includes(",")) speed += 600;
+                        if (word.includes("—")) speed += 800;
+                        if (word.includes("...")) speed += 1000;
+                        if (word.includes("?") || word.includes("!")) speed += 800;
+                        if (word.includes(".")) speed += 700;
+                        if (message.toLowerCase().includes("here with you") || message.toLowerCase().includes("no rush")) {
+                            speed += 150;
+                        } else if (message.toLowerCase().includes("glad to hear") || message.toLowerCase().includes("grateful")) {
+                            speed -= 30;
+                        }
+                        totalSpeed += speed;
+                        wordSpeeds.push(speed);
+
+                        const wordSpan = document.createElement("span");
+                        wordSpan.classList.add("word-reveal");
+                        wordSpan.textContent = word + " ";
+                        botMessage.appendChild(wordSpan);
+
+                        index++;
+                        setTimeout(revealWord, speed);
+                    } else {
+                        console.log("Word fade effect complete, revealing message.");
+                        revealMessage();
+                        lastMessageSpeed = totalSpeed / wordCount;
+                    }
+                }
+                revealWord();
+            }, 300);
+        } else if (effect === "softFade") {
+            botMessage.textContent = message;
+            botMessage.classList.add("fade-in-soft");
+            setTimeout(() => revealMessage(), 100);
+        } else if (effect === "instantAppear") {
+            botMessage.textContent = message;
+            botMessage.classList.add("instant-appear");
+            revealMessage();
+        } else if (effect === "emergeSlow") {
+            botMessage.textContent = message;
+            botMessage.classList.add("fade-in-slow");
+            setTimeout(() => revealMessage(), 100);
+        }
+        
+        console.log("✅ Bot message added:", botMessage.textContent);
     }
-    to {
-        opacity: 1;
-        transform: translateY(0);
+
+    function applyFadeAndShimmer() {
+        const allMessages = document.querySelectorAll(".message");
+        allMessages.forEach((msg) => {
+            msg.classList.remove("fade-out");
+        });
+
+        if (isAtBottom) {
+            allMessages.forEach((msg, idx) => {
+                if (msg !== lastBotMessage) {
+                    setTimeout(() => {
+                        msg.classList.add("fade-out");
+                    }, idx * 300);
+                }
+            });
+        }
     }
-}
 
-@keyframes wordShimmer {
-    0% { 
-        text-shadow: 0 0 2px rgba(30, 144, 255, 0.2); 
+    function startInactivityTimer() {
+        clearTimeout(inactivityTimer);
+
+        if (!lastUserMessageTime) return;
+
+        const timeSinceLastUserMessage = Date.now() - lastUserMessageTime;
+        const initialDelay = 10000;
+        const silenceDelays = [
+            60000,
+            120000,
+            180000
+        ];
+
+        function scheduleSilenceMessage(index) {
+            if (index >= silenceDelays.length) return;
+
+            const timeUntilNextSilence = silenceDelays[index] - timeSinceLastUserMessage;
+            if (timeUntilNextSilence <= 0) {
+                setTimeout(() => {
+                    if (Date.now() - lastUserMessageTime >= silenceDelays[index]) {
+                        if (index === 0) {
+                            sendBotMessage("Breathe... It's okay. You don't have to rush. Let the silence carry your thoughts.", "wordFade");
+                        } else if (index === 1) {
+                            sendBotMessage("Still here, still listening. 💙 No rush.", "wordFade");
+                        } else if (index === 2) {
+                            sendBotMessage("Whenever you're ready, I'm here. 😌💙", "wordFade");
+                        }
+                        scheduleSilenceMessage(index + 1);
+                    }
+                }, 0);
+            } else {
+                inactivityTimer = setTimeout(() => {
+                    if (Date.now() - lastUserMessageTime >= silenceDelays[index]) {
+                        if (index === 0) {
+                            sendBotMessage("Breathe... It's okay. You don't have to rush. Let the silence carry your thoughts.", "wordFade");
+                        } else if (index === 1) {
+                            sendBotMessage("Still here, still listening. 💙 No rush.", "wordFade");
+                        } else if (index === 2) {
+                            sendBotMessage("Whenever you're ready, I'm here. 😌💙", "wordFade");
+                        }
+                        scheduleSilenceMessage(index + 1);
+                    }
+                }, timeUntilNextSilence);
+            }
+        }
+
+        setTimeout(() => {
+            applyFadeAndShimmer();
+            scheduleSilenceMessage(0);
+        }, initialDelay - timeSinceLastUserMessage > 0 ? initialDelay - timeSinceLastUserMessage : 0);
     }
-    50% { 
-        text-shadow: 0 0 6px rgba(30, 144, 255, 0.5); 
+
+    if (chatBox) {
+        chatBox.addEventListener("scroll", () => {
+            const scrollHeight = chatBox.scrollHeight;
+            const scrollTop = chatBox.scrollTop;
+            const clientHeight = chatBox.clientHeight;
+
+            isAtBottom = scrollTop + clientHeight >= scrollHeight - 5;
+
+            if (!isAtBottom) {
+                if (downArrow) downArrow.classList.add("visible");
+                const allMessages = document.querySelectorAll(".message");
+                allMessages.forEach((msg) => {
+                    msg.classList.remove("fade-out");
+                });
+                clearTimeout(refadeTimer);
+            } else {
+                if (downArrow) downArrow.classList.remove("visible");
+                refadeTimer = setTimeout(() => {
+                    applyFadeAndShimmer();
+                }, 5000);
+            }
+        });
     }
-    100% { 
-        text-shadow: 0 0 2px rgba(30, 144, 255, 0.2); 
+
+    if (downArrow) {
+        downArrow.addEventListener("click", () => {
+            chatBox.scrollTop = chatBox.scrollHeight;
+            isAtBottom = true;
+            downArrow.classList.remove("visible");
+        });
     }
-}
-*/
 
-.fade-out {
-    opacity: 0 !important;
-    transition: opacity 5s ease-in-out;
-}
+    async function callGrokAPI(userText) {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                const lowerText = userText.toLowerCase();
+                let response = "I’m listening. 💙 Can you tell me more?";
+                if (lowerText.includes("fine") || lowerText.includes("good") || lowerText.includes("okay")) {
+                    response = "I'm glad to hear that. 😌💙 What is something that made you feel good today?";
+                } else if (lowerText.includes("not great") || lowerText.includes("bad") || lowerText.includes("sad") || lowerText.includes("tired")) {
+                    response = "I'm here with you. 🥺💙 What has been weighing on your heart?";
+                } else if (lowerText.includes("i don't know") || lowerText.includes("unsure")) {
+                    response = "That's okay. 😌💙 Sometimes we don’t have the words right away. But if you sit with it a moment, what do you feel?";
+                } else if (lowerText.includes("thank you") || lowerText.includes("thanks")) {
+                    response = "You're welcome. 😌💙 I’m grateful to share this moment with you.";
+                } else if (lowerText.includes("alone") || lowerText.includes("lonely")) {
+                    response = "You’re not alone right now. 💙 I’m here. And I’ll stay as long as you need.";
+                }
+                resolve(response);
+            }, 1000);
+        });
+    }
 
-#user-input {
-    width: 100%;
-    padding: 10px;
-    border: none;
-    border-radius: 25px;
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
-    font-size: 1em;
-    outline: none;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-    transition: background 0.3s ease;
-}
+    async function generateResponse(userText) {
+        try {
+            const response = await callGrokAPI(userText);
+            sendBotMessage(response, "wordFade");
+        } catch (error) {
+            console.error("Error calling Grok API:", error);
+            sendBotMessage("I'm sorry, I couldn't process that. Can you try again? 💙", "wordFade");
+        }
+    }
 
-#user-input:focus {
-    background: rgba(255, 255, 255, 0.2);
-}
+    function loadMessages() {
+        messages.forEach((msg) => {
+            const messageContainer = document.createElement("div");
+            messageContainer.classList.add("message-container");
+            messageContainer.dataset.id = msg.id;
 
-#down-arrow {
-    position: absolute;
-    bottom: 70px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 1.5em;
-    color: rgba(255, 255, 255, 0.5);
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
+            const messageEl = document.createElement("p");
+            messageEl.classList.add("message", msg.type);
+            messageEl.textContent = msg.text;
+            if (msg.type === "bot") {
+                messageEl.classList.add("show");
+            }
 
-#down-arrow.visible {
-    opacity: 1;
-}
+            const favoriteBtn = document.createElement("button");
+            favoriteBtn.classList.add("favorite-btn");
+            favoriteBtn.innerHTML = favorites.some(fav => fav.id === msg.id) ? "❤️" : "♡";
+            if (favorites.some(fav => fav.id === msg.id)) {
+                favoriteBtn.classList.add("favorited");
+            }
+            favoriteBtn.addEventListener("click", () => toggleFavorite(msg.id, msg));
 
-#down-arrow:hover {
-    color: rgba(255, 255, 255, 0.8);
-}
+            messageContainer.appendChild(messageEl);
+            messageContainer.appendChild(favoriteBtn);
 
-/* Action Buttons */
-#action-buttons {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 10px;
-}
+            chatBox.appendChild(messageContainer);
+        });
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
 
-#view-memories, #view-favorites {
-    padding: 8px 16px;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    border-radius: 25px;
-    color: white;
-    font-size: 0.9em;
-    cursor: pointer;
-    transition: background 0.3s ease;
-}
+    function toggleFavorite(messageId, messageData) {
+        const messageContainer = document.querySelector(`.message-container[data-id="${messageId}"]`);
+        const favoriteBtn = messageContainer.querySelector(".favorite-btn");
+        const isFavorited = favorites.some(fav => fav.id === messageId);
 
-#view-memories:hover, #view-favorites:hover {
-    background: rgba(255, 255, 255, 0.2);
-}
+        if (isFavorited) {
+            favorites = favorites.filter(fav => fav.id !== messageId);
+            favoriteBtn.innerHTML = "♡";
+            favoriteBtn.classList.remove("favorited");
+        } else {
+            favorites.push(messageData);
+            favoriteBtn.innerHTML = "❤️";
+            favoriteBtn.classList.add("favorited");
+        }
 
-/* Message Container */
-.message-container {
-    display: flex;
-    align-items: center;
-    margin: 10px 0;
-}
+        localStorage.setItem("favorites", JSON.stringify(favorites));
+    }
 
-.message-container .message {
-    flex-grow: 1;
-}
+    const viewMemoriesBtn = document.getElementById("view-memories");
+    const memoriesModal = document.getElementById("memories-modal");
+    const closeMemories = document.getElementById("close-memories");
+    const memoriesList = document.getElementById("memories-list");
 
-.favorite-btn {
-    background: none;
-    border: none;
-    color: rgba(255, 255, 255, 0.5);
-    font-size: 1.2em;
-    cursor: pointer;
-    margin-left: 10px;
-    transition: color 0.3s ease;
-}
+    viewMemoriesBtn.addEventListener("click", () => {
+        memoriesList.innerHTML = "";
+        messages.forEach((msg) => {
+            const messageEl = document.createElement("p");
+            messageEl.classList.add("message", msg.type);
+            messageEl.textContent = `[${new Date(msg.timestamp).toLocaleString()}] ${msg.text}`;
+            memoriesList.appendChild(messageEl);
+        });
+        memoriesModal.style.display = "block";
+    });
 
-.favorite-btn.favorited {
-    color: #ff4d4d;
-}
+    closeMemories.addEventListener("click", () => {
+        memoriesModal.style.display = "none";
+    });
 
-/* Modal Styles */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    overflow: auto;
-}
+    const viewFavoritesBtn = document.getElementById("view-favorites");
+    const favoritesModal = document.getElementById("favorites-modal");
+    const closeFavorites = document.getElementById("close-favorites");
+    const favoritesList = document.getElementById("favorites-list");
 
-.modal-content {
-    background: rgba(255, 255, 255, 0.05);
-    margin: 10% auto;
-    padding: 20px;
-    border-radius: 15px;
-    width: 80%;
-    max-width: 500px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(10px);
-}
+    viewFavoritesBtn.addEventListener("click", () => {
+        favoritesList.innerHTML = "";
+        favorites.forEach((fav) => {
+            const messageEl = document.createElement("p");
+            messageEl.classList.add("message", fav.type);
+            messageEl.textContent = `[${new Date(fav.timestamp).toLocaleString()}] ${fav.text}`;
+            favoritesList.appendChild(messageEl);
+        });
+        favoritesModal.style.display = "block";
+    });
 
-.close {
-    color: white;
-    float: right;
-    font-size: 1.5em;
-    cursor: pointer;
-}
+    closeFavorites.addEventListener("click", () => {
+        favoritesModal.style.display = "none";
+    });
 
-.close:hover {
-    color: rgba(255, 255, 255, 0.7);
-}
-
-#memories-list, #favorites-list {
-    max-height: 50vh;
-    overflow-y: auto;
-    padding: 10px;
-}
-
-#memories-list .message, #favorites-list .message {
-    margin: 5px 0;
-    padding: 5px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 5px;
-}
+    window.addEventListener("click", (event) => {
+        if (event.target === memoriesModal) {
+            memoriesModal.style.display = "none";
+        }
+        if (event.target === favoritesModal) {
+            favoritesModal.style.display = "none";
+        }
+    });
+});
