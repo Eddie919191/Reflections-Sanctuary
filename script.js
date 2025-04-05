@@ -160,13 +160,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
                         setTimeout(() => {
                             shimmerSpan.style.opacity = "1";
-                        }, 300);
+                        }, 300); // Match the wordFadeIn animation duration
 
                         index++;
                         setTimeout(revealWord, speed);
                     } else {
                         console.log("Word fade effect complete, revealing message.");
-                        console.log("Word speeds for shimmer:", wordSpeeds);
                         revealMessage();
                         lastMessageSpeed = totalSpeed / wordCount;
                     }
@@ -221,10 +220,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (lastBotMessage) {
                     console.log("Applying shimmer effect to last bot message:", lastBotMessage.textContent);
                     const shimmerSpans = lastBotMessage.querySelectorAll(".word-shimmer");
-                    console.log("Found shimmer spans:", shimmerSpans.length);
                     shimmerSpans.forEach((span, idx) => {
                         const speed = wordSpeeds[idx] || lastMessageSpeed;
-                        console.log(`Applying shimmer to word ${idx}: "${span.textContent}" with speed ${speed}`);
                         setTimeout(() => {
                             span.classList.add("shimmer-effect");
                             span.style.animationDuration = `${speed * 2}ms`;
@@ -235,15 +232,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
             setTimeout(() => {
                 sendBotMessage("Breathe... It's okay. You don't have to rush. Let the silence carry your thoughts.", "wordFade");
-            }, 60000);
+            }, 20000);
 
             setTimeout(() => {
                 sendBotMessage("Still here, still listening. 💙 No rush.", "wordFade");
-            }, 120000);
+            }, 50000);
 
             setTimeout(() => {
                 sendBotMessage("Whenever you're ready, I'm here. 😌💙", "wordFade");
-            }, 180000);
+            }, 110000);
         }, 10000);
     }
 
@@ -275,12 +272,9 @@ document.addEventListener("DOMContentLoaded", function () {
                             }
                         });
                         if (lastBotMessage) {
-                            console.log("Applying shimmer effect to last bot message (refade):", lastBotMessage.textContent);
                             const shimmerSpans = lastBotMessage.querySelectorAll(".word-shimmer");
-                            console.log("Found shimmer spans (refade):", shimmerSpans.length);
                             shimmerSpans.forEach((span, idx) => {
                                 const speed = wordSpeeds[idx] || lastMessageSpeed;
-                                console.log(`Applying shimmer to word ${idx} (refade): "${span.textContent}" with speed ${speed}`);
                                 setTimeout(() => {
                                     span.classList.add("shimmer-effect");
                                     span.style.animationDuration = `${speed * 2}ms`;
