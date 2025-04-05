@@ -87,13 +87,14 @@
 .message {
     display: block !important;
     margin: 10px 0;
-    padding: 0; /* No extra spacing */
-    border-radius: 0; /* No rounding */
+    padding: 0;
+    border-radius: 0;
     max-width: 80%;
     word-wrap: break-word;
     color: white !important;
-    background: none; /* Remove message box */
+    background: none;
     position: relative;
+    transition: opacity 5s ease-in-out;
 }
 /* User messages */
 .message.user {
@@ -103,7 +104,6 @@
     text-align: right;
     position: relative;
     animation: fadeInUser 0.5s ease-in-out forwards;
-    transition: opacity 5s ease-in-out;
 }
 /* Default bot messages (like the intro ones) */
 .message.bot {
@@ -214,13 +214,16 @@
 }
 @keyframes wordShimmer {
     0% { 
-        text-shadow: 0 0 2px rgba(30, 144, 255, 0.2); 
+        text-shadow: 0 0 4px rgba(30, 144, 255, 0.3); 
+        filter: brightness(1);
     }
     50% { 
-        text-shadow: 0 0 6px rgba(30, 144, 255, 0.5); 
+        text-shadow: 0 0 12px rgba(30, 144, 255, 0.7); 
+        filter: brightness(1.3);
     }
     100% { 
-        text-shadow: 0 0 2px rgba(30, 144, 255, 0.2); 
+        text-shadow: 0 0 4px rgba(30, 144, 255, 0.3); 
+        filter: brightness(1);
     }
 }
 /* Thinking effect for chat box during delay */
